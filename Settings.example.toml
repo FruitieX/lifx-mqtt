@@ -1,0 +1,19 @@
+[mqtt]
+
+# ID used when connecting MQTT client, needs to be unique across MQTT clients connected to the broker
+id = "lifx-mqtt"
+
+# Domain name / IP address and port of the MQTT broker
+host = "test.mosquitto.org"
+port = 1883
+
+# MQTT topic where light updates will be published
+light_topic = "home/lights/lifx/{id}"
+
+# MQTT topic whhere if another client publishes a light update, we will send the
+# received light state to the corresponding Lifx bulb
+light_topic_set = "home/lights/lifx/{id}/set"
+
+[devices]
+light-1 = { name = "Bedroom lamp 1", ip = "192.168.1.48" }
+light-2 = { name = "Bedroom lamp 2", ip = "192.168.1.31" }
