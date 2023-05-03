@@ -58,7 +58,7 @@ pub fn to_lifx_state(addr: &SocketAddr, device: &MqttDevice) -> Result<LifxState
 
     match device.color {
         Some(color) => {
-            let hue = ((color.hue.to_positive_degrees() / 360.0) * 65535.0).floor() as u16;
+            let hue = ((color.hue.into_positive_degrees() / 360.0) * 65535.0).floor() as u16;
             let sat = (color.saturation * 65535.0).floor() as u16;
             let bri = (device.brightness.unwrap_or(1.0) * color.value * 65535.0).floor() as u16;
 
