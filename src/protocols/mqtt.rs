@@ -1,5 +1,6 @@
 use color_eyre::Result;
 use eyre::eyre;
+use rand::{distributions::Alphanumeric, Rng};
 use rumqttc::{AsyncClient, MqttOptions, QoS};
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{
@@ -20,8 +21,14 @@ pub struct MqttClient {
 }
 
 pub async fn mk_mqtt_client(settings: &Settings) -> Result<MqttClient> {
+    let random_string: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(8)
+        .map(char::from)
+        .collect();
+
     let mut options = MqttOptions::new(
-        settings.mqtt.id.clone(),
+        format!("{}-{}", settings.mqtt.id.clone(), random_string),
         settings.mqtt.host.clone(),
         settings.mqtt.port,
     );
