@@ -1,2 +1,5 @@
-/target/
-/Settings.toml
+# Ignore everything
+*
+
+# Allow built binary
+!/target/x86_64-unknown-linux-musl/release/lifx-mqtt
