@@ -10,9 +10,7 @@ pub struct Capabilities {
 
 impl Default for Capabilities {
     fn default() -> Self {
-        Capabilities {
-            hs: true,
-        }
+        Capabilities { hs: true }
     }
 }
 
@@ -38,5 +36,5 @@ pub struct MqttDevice {
     pub color: Option<DeviceColor>,
     pub transition_ms: Option<f32>,
     pub sensor_value: Option<String>,
-    pub capabilities: Option<Capabilities>
+    pub capabilities: Option<Capabilities>,
 }
