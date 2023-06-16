@@ -1,11 +1,10 @@
 use std::{net::SocketAddr, time::Duration};
 
 use color_eyre::Result;
-use palette::Hsv;
 use tokio::time;
 
 use crate::{
-    mqtt_device::MqttDevice,
+    mqtt_device::{Capabilities, DeviceColor, Hs, MqttDevice},
     protocols::{
         lifx_udp::{
             read_lifx_msg, LifxMsg, LifxSocket, LifxState, LIFX_UDP_PORT, MAX_UDP_PACKET_SIZE,
@@ -26,13 +25,13 @@ pub fn from_lifx_state(settings: &Settings, lifx_state: LifxState) -> Result<Mqt
 
     let id = device_settings.0.clone();
 
-    let hue = (f32::from(lifx_state.hue) / 65535.0) * 360.0;
-    let sat = f32::from(lifx_state.sat) / 65535.0;
+    let h = (f32::from(lifx_state.hue) / 65535.0) * 360.0;
+    let s = f32::from(lifx_state.sat) / 65535.0;
     let bri = f32::from(lifx_state.bri) / 65535.0;
 
     let power = lifx_state.power == 65535;
 
-    let color = Hsv::new(hue, sat, bri);
+    let color = DeviceColor::Hs(Hs { h: h as u16, s });
 
     let transition_ms = lifx_state.transition.map(|transition| transition as f32);
 
@@ -43,8 +42,8 @@ pub fn from_lifx_state(settings: &Settings, lifx_state: LifxState) -> Result<Mqt
         color: Some(color),
         brightness: Some(bri),
         transition_ms,
-        cct: None,
         sensor_value: None,
+        capabilities: Some(Capabilities::default()),
     };
 
     Ok(mqtt_device)
@@ -57,10 +56,10 @@ pub fn to_lifx_state(addr: &SocketAddr, device: &MqttDevice) -> Result<LifxState
         .map(|transition_ms| transition_ms as u32);
 
     match device.color {
-        Some(color) => {
-            let hue = ((color.hue.into_positive_degrees() / 360.0) * 65535.0).floor() as u16;
-            let sat = (color.saturation * 65535.0).floor() as u16;
-            let bri = (device.brightness.unwrap_or(1.0) * color.value * 65535.0).floor() as u16;
+        Some(DeviceColor::Hs(ref color)) => {
+            let hue = ((color.h as f32 / 360.0) * 65535.0).floor() as u16;
+            let sat = (color.s * 65535.0).floor() as u16;
+            let bri = (device.brightness.unwrap_or(1.0) * 65535.0).floor() as u16;
 
             Ok(LifxState {
                 hue,
