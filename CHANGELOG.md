@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/FruitieX/lifx-mqtt/compare/v0.4.0...v0.4.1) (2023-06-26)
+
+
+### Bug Fixes
+
+* attempt reconnecting to mqtt after failure ([c273c2a](https://github.com/FruitieX/lifx-mqtt/commit/c273c2a27c7bf58cafefa16ee7ab92c6f46829d9))
+* **deps:** update rust crate serde_json to 1.0.99 ([78ed9be](https://github.com/FruitieX/lifx-mqtt/commit/78ed9bec86c0173bf31602773e6b4e4405f6e759))
+
 ## [0.4.0](https://github.com/FruitieX/lifx-mqtt/compare/v0.2.0...v0.4.0) (2023-06-16)
 
 
