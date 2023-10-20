@@ -41,40 +41,52 @@ pub async fn mk_mqtt_client(settings: &Settings) -> Result<MqttClient> {
     let tx = Arc::new(RwLock::new(tx));
     let rx = Arc::new(RwLock::new(rx));
 
-    client
-        .subscribe(
-            settings.mqtt.light_topic_set.replace("{id}", "+"),
-            QoS::AtMostOnce,
-        )
-        .await?;
+    {
+        let settings = settings.clone();
+        let client = client.clone();
 
-    task::spawn(async move {
-        loop {
-            {
-                let notification = eventloop.poll().await;
-                let mqtt_tx = tx.clone();
+        task::spawn(async move {
+            loop {
+                {
+                    let notification = eventloop.poll().await;
+                    let mqtt_tx = tx.clone();
+                    let settings = settings.clone();
+                    let client = client.clone();
 
-                let res = (|| async move {
-                    if let rumqttc::Event::Incoming(rumqttc::Packet::Publish(msg)) = notification? {
-                        let device: MqttDevice = serde_json::from_slice(&msg.payload)?;
+                    let res = (|| async move {
+                        match notification? {
+                            rumqttc::Event::Incoming(rumqttc::Packet::ConnAck(_)) => {
+                                client
+                                    .subscribe(
+                                        settings.mqtt.light_topic_set.replace("{id}", "+"),
+                                        QoS::AtMostOnce,
+                                    )
+                                    .await?;
+                            }
 
-                        let tx = mqtt_tx.write().await;
-                        tx.send(Some(device)).await?;
+                            rumqttc::Event::Incoming(rumqttc::Packet::Publish(msg)) => {
+                                let device: MqttDevice = serde_json::from_slice(&msg.payload)?;
+
+                                let tx = mqtt_tx.write().await;
+                                tx.send(Some(device)).await?;
+                            }
+                            _ => {}
+                        }
+
+                        Ok::<(), Box<dyn std::error::Error + Send + Sync>>(())
+                    })()
+                    .await;
+
+                    if let Err(e) = res {
+                        eprintln!("MQTT error: {:?}", e);
+                        tokio::time::sleep(Duration::from_millis(1000)).await;
                     }
-
-                    Ok::<(), Box<dyn std::error::Error + Send + Sync>>(())
-                })()
-                .await;
-
-                if let Err(e) = res {
-                    eprintln!("MQTT error: {:?}", e);
-                    tokio::time::sleep(Duration::from_millis(1000)).await;
                 }
-            }
 
-            tokio::time::sleep(Duration::from_millis(100)).await;
-        }
-    });
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            }
+        });
+    }
 
     Ok(MqttClient { client, rx })
 }
