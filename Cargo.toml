@@ -12,7 +12,7 @@ config = "=0.13.4"
 derive_builder = "=0.13.0"
 eyre = "=0.6.11"
 futures = "=0.3.30"
-palette = { version = "=0.7.3", features = ["serializing"] }
+palette = { version = "=0.7.4", features = ["serializing"] }
 rand = "=0.8.5"
 rumqttc = "=0.23.0"
 serde = { version = "=1.0.196", features = ["derive"] }
