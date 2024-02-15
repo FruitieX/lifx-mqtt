@@ -9,7 +9,7 @@ edition = "2021"
 byteorder = "=1.5.0"
 color-eyre = "=0.6.2"
 config = "=0.14.0"
-derive_builder = "=0.13.1"
+derive_builder = "=0.20.0"
 eyre = "=0.6.12"
 futures = "=0.3.30"
 palette = { version = "=0.7.4", features = ["serializing"] }
