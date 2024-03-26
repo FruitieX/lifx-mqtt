@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.4.3](https://github.com/FruitieX/lifx-mqtt/compare/v0.4.2...v0.4.3) (2024-03-26)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate color-eyre to v0.6.3 ([cc2fd95](https://github.com/FruitieX/lifx-mqtt/commit/cc2fd9596a8dd1607f516e8c720983a015916fb1))
+* **deps:** update rust crate config to v0.13.4 ([45b2c9a](https://github.com/FruitieX/lifx-mqtt/commit/45b2c9afdb9600901d112679d6ac7b849290a438))
+* **deps:** update rust crate config to v0.14.0 ([6c341e2](https://github.com/FruitieX/lifx-mqtt/commit/6c341e24b6cc6c1dd33e4844982dda5d60c2ea04))
+* **deps:** update rust crate derive_builder to v0.13.0 ([61bbd5d](https://github.com/FruitieX/lifx-mqtt/commit/61bbd5d7bf609a77a5a6b861b09ce48dd17e3cfc))
+* **deps:** update rust crate derive_builder to v0.13.1 ([bfb6183](https://github.com/FruitieX/lifx-mqtt/commit/bfb6183af92702ff124f2b636f1279ecb292c560))
+* **deps:** update rust crate derive_builder to v0.20.0 ([aa41ca1](https://github.com/FruitieX/lifx-mqtt/commit/aa41ca1268b7396e19eb4b2faf55b24d7455bbe4))
+* **deps:** update rust crate eyre to v0.6.10 ([8c1ac18](https://github.com/FruitieX/lifx-mqtt/commit/8c1ac187dba25c7787b870ab993f68fc6bbd671a))
+* **deps:** update rust crate eyre to v0.6.11 ([7ec8f05](https://github.com/FruitieX/lifx-mqtt/commit/7ec8f05df673f77bf276ec22ed84f4e91071a887))
+* **deps:** update rust crate eyre to v0.6.12 ([68187ab](https://github.com/FruitieX/lifx-mqtt/commit/68187ab86704578b9c24f2ba7c12d7cf5bac6bcf))
+* **deps:** update rust crate eyre to v0.6.9 ([ef02a2a](https://github.com/FruitieX/lifx-mqtt/commit/ef02a2a33e1d0bef2dd5419e0d619a27937ddd43))
+* **deps:** update rust crate futures to v0.3.29 ([2668ee5](https://github.com/FruitieX/lifx-mqtt/commit/2668ee585de3b6bba3626b7cc425a0fb21d7adb6))
+* **deps:** update rust crate futures to v0.3.30 ([623cdc6](https://github.com/FruitieX/lifx-mqtt/commit/623cdc61333d409f7a80deafb2e7e78dddfdec2c))
+* **deps:** update rust crate palette to v0.7.4 ([ef8af8a](https://github.com/FruitieX/lifx-mqtt/commit/ef8af8a7d8bed0d2a6e9ad601c63529a3f9fa7fd))
+* **deps:** update rust crate palette to v0.7.5 ([818e170](https://github.com/FruitieX/lifx-mqtt/commit/818e17050a4d23f22d71bd678a44198ee07e6e20))
+* **deps:** update rust crate rumqttc to v0.24.0 ([0cd7d20](https://github.com/FruitieX/lifx-mqtt/commit/0cd7d2087b080d0caf436d5af8f4457ff9516825))
+* **deps:** update rust crate serde to 1.0.190 ([fdc3dd6](https://github.com/FruitieX/lifx-mqtt/commit/fdc3dd6e505adcb4a17639266f69f3880d0fea5b))
+* **deps:** update rust crate serde to v1.0.192 ([ee56ade](https://github.com/FruitieX/lifx-mqtt/commit/ee56adecd8e90bc470b513251026b6433bba57ee))
+* **deps:** update rust crate serde to v1.0.193 ([a8f61a5](https://github.com/FruitieX/lifx-mqtt/commit/a8f61a58169f61610e89f127f2ea0c9831ee8660))
+* **deps:** update rust crate serde to v1.0.194 ([8b89565](https://github.com/FruitieX/lifx-mqtt/commit/8b895650ffee5242251a0969ad4272e9e8719ac2))
+* **deps:** update rust crate serde to v1.0.195 ([de23678](https://github.com/FruitieX/lifx-mqtt/commit/de23678ca33d0a3f3fa96c508d7d387cc0302143))
+* **deps:** update rust crate serde to v1.0.196 ([dc37ae4](https://github.com/FruitieX/lifx-mqtt/commit/dc37ae4ed5d149234db05c59a94eeeb9a73cf29d))
+* **deps:** update rust crate serde to v1.0.197 ([994a224](https://github.com/FruitieX/lifx-mqtt/commit/994a22499f649834a28ccd3cdd4107481f88523c))
+* **deps:** update rust crate serde_json to v1.0.108 ([5d1ac6e](https://github.com/FruitieX/lifx-mqtt/commit/5d1ac6ecdfaf69ab37f24d354c1a6e6a429893ea))
+* **deps:** update rust crate serde_json to v1.0.109 ([b877e73](https://github.com/FruitieX/lifx-mqtt/commit/b877e73d752205dd70bca586e44414f39c1727c5))
+* **deps:** update rust crate serde_json to v1.0.110 ([a567948](https://github.com/FruitieX/lifx-mqtt/commit/a5679487a78a64946c72d62e8592c9ab5c418714))
+* **deps:** update rust crate serde_json to v1.0.111 ([1eda9da](https://github.com/FruitieX/lifx-mqtt/commit/1eda9da097a8f7b254774d4e44d2f8797ca45f94))
+* **deps:** update rust crate serde_json to v1.0.112 ([5374319](https://github.com/FruitieX/lifx-mqtt/commit/53743194b6710333149ef65314f1c5e74ba7c39a))
+* **deps:** update rust crate serde_json to v1.0.113 ([8e13637](https://github.com/FruitieX/lifx-mqtt/commit/8e13637f0f3d81f551cacd19e0ae7e1211cadad9))
+* **deps:** update rust crate serde_json to v1.0.114 ([48f8f44](https://github.com/FruitieX/lifx-mqtt/commit/48f8f44ce4a2865440159251c7f73036563605b1))
+* **deps:** update rust crate serde_json to v1.0.115 ([cbcc869](https://github.com/FruitieX/lifx-mqtt/commit/cbcc8693f5794e82f3fd5fbe5a929d02d34adfda))
+* **deps:** update rust crate serde_path_to_error to v0.1.15 ([d34cfb3](https://github.com/FruitieX/lifx-mqtt/commit/d34cfb3842dab05e237043cf51b86c4343fe6160))
+* **deps:** update rust crate serde_path_to_error to v0.1.16 ([8cd9850](https://github.com/FruitieX/lifx-mqtt/commit/8cd9850c00540481e031f04a4b03fac7f803cde7))
+* **deps:** update rust crate tokio to v1.34.0 ([6483c0b](https://github.com/FruitieX/lifx-mqtt/commit/6483c0be2bbfdeb63a836c659fa5615fbbc39360))
+* **deps:** update rust crate tokio to v1.35.0 ([bccdc2f](https://github.com/FruitieX/lifx-mqtt/commit/bccdc2f85d34f879501887426421913c5dd09009))
+* **deps:** update rust crate tokio to v1.35.1 ([5169988](https://github.com/FruitieX/lifx-mqtt/commit/5169988db5603223f70b48e5550994f2f4c7c655))
+* **deps:** update rust crate tokio to v1.36.0 ([96749e0](https://github.com/FruitieX/lifx-mqtt/commit/96749e0a5826b4aa8991c603262f5bacd45fbebe))
+
 ## [0.4.2](https://github.com/FruitieX/lifx-mqtt/compare/v0.4.1...v0.4.2) (2023-10-20)
 
 
