@@ -18,7 +18,7 @@ rumqttc = "=0.24.0"
 serde = { version = "=1.0.204", features = ["derive"] }
 serde_json = "=1.0.120"
 serde_path_to_error = "=0.1.16"
-tokio = { version = "=1.38.1", features = ["macros", "full"] }
+tokio = { version = "=1.39.1", features = ["macros", "full"] }
 
 # https://docs.rs/color-eyre/latest/color_eyre/#improving-perf-on-debug-builds
 [profile.dev.package.backtrace]
