@@ -11,7 +11,7 @@ color-eyre = "=0.6.3"
 config = "=0.14.0"
 derive_builder = "=0.20.1"
 eyre = "=0.6.12"
-futures = "=0.3.30"
+futures = "=0.3.31"
 palette = { version = "=0.7.6", features = ["serializing"] }
 rand = "=0.8.5"
 rumqttc = "=0.24.0"
