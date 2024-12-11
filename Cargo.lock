@@ -582,7 +582,7 @@ checksum = "09d6582e104315a817dff97f75133544b2e094ee22447d2acf4a74e189ba06fc"
 
 [[package]]
 name = "lifx-mqtt"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "byteorder",
  "color-eyre",
