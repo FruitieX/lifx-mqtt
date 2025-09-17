@@ -17,7 +17,7 @@ rand = "=0.8.5"
 rumqttc = "=0.25.0"
 serde = { version = "=1.0.225", features = ["derive"] }
 serde_json = "=1.0.145"
-serde_path_to_error = "=0.1.17"
+serde_path_to_error = "=0.1.20"
 tokio = { version = "=1.47.1", features = ["macros", "full"] }
 
 # https://docs.rs/color-eyre/latest/color_eyre/#improving-perf-on-debug-builds
