@@ -59,7 +59,7 @@ pub struct LifxState {
 
 #[derive(Clone, Debug)]
 pub enum LifxMsg {
-    Get(SocketAddr),
+    Get,
     SetColor(LifxState),
     State(LifxState),
     SetPower(LifxState),
@@ -68,7 +68,7 @@ pub enum LifxMsg {
 
 pub fn lifx_msg_type_to_u16(msg_type: LifxMsg) -> u16 {
     match msg_type {
-        LifxMsg::Get(_) => 101,
+        LifxMsg::Get => 101,
         LifxMsg::SetColor(_) => 102,
         LifxMsg::State(_) => 107,
         LifxMsg::SetPower(_) => 117,
@@ -134,7 +134,7 @@ pub fn mk_lifx_udp_msg(lifx_msg: LifxMsg) -> Vec<u8> {
     let mut frame_address: [u8; 16] = [0; 16];
     let ack_required = 0;
     let res_required = match lifx_msg {
-        LifxMsg::Get(_) => 1,
+        LifxMsg::Get => 1,
         _ => 0,
     };
 

@@ -103,7 +103,7 @@ pub fn start_light_polling_loop(settings: &Settings, lifx_socket: &LifxSocket) {
                             e, device.ip, device.name
                         )
                     });
-                let msg = LifxMsg::Get(addr);
+                let msg = LifxMsg::Get;
 
                 lifx_socket
                     .send(&addr, msg)
