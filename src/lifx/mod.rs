@@ -144,9 +144,8 @@ pub fn start_udp_receiver_loop(
             let res = lifx_socket.udp_socket.recv_from(&mut buf).await;
 
             let res = match res {
-                // FIXME: should probably do some sanity checks on bytes_read
-                Ok((_bytes_read, addr)) => {
-                    let msg = read_lifx_msg(&buf, addr);
+                Ok((bytes_read, addr)) => {
+                    let msg = read_lifx_msg(&buf[..bytes_read], addr);
                     handle_incoming_lifx_msg(&mqtt_client, &settings, msg).await
                 }
                 Err(e) => Err(e.into()),
