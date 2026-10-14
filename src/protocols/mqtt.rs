@@ -1,29 +1,39 @@
-#![allow(clippy::redundant_closure_call)]
-
 use color_eyre::Result;
-use eyre::eyre;
 use rand::{distributions::Alphanumeric, Rng};
-use rumqttc::{AsyncClient, MqttOptions, QoS};
-use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
+use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 use tokio::{
-    sync::{mpsc::Receiver, RwLock},
-    task,
+    sync::mpsc::{self, Receiver},
+    task::JoinHandle,
+    time,
 };
 
 use crate::{mqtt_device::MqttDevice, settings::Settings};
 
-use super::lifx_udp::{LifxSocket, LIFX_UDP_PORT};
+const KEEP_ALIVE: Duration = Duration::from_secs(15);
 
-pub type MqttRx = Arc<RwLock<Receiver<Option<MqttDevice>>>>;
+/// If nothing has been received from the broker for this long (not even a
+/// ping response), consider the connection wedged and give up.
+const MAX_SILENCE: Duration = Duration::from_secs(120);
 
 #[derive(Clone)]
 pub struct MqttClient {
-    pub client: AsyncClient,
-    pub rx: MqttRx,
-    pub states: Arc<RwLock<HashMap<String, MqttDevice>>>,
+    client: AsyncClient,
+    light_topic: String,
+    /// Last state queued for publishing per device. Cleared on reconnect so
+    /// that every state gets republished in the new session.
+    published: Arc<Mutex<HashMap<String, MqttDevice>>>,
+    last_incoming: Arc<Mutex<Instant>>,
 }
 
-pub async fn mk_mqtt_client(settings: &Settings) -> Result<MqttClient> {
+/// Connects to the broker and spawns the task driving the MQTT event loop.
+/// Light commands received from the broker are delivered through the
+/// returned channel.
+pub fn mk_mqtt_client(settings: &Settings) -> (MqttClient, Receiver<MqttDevice>, JoinHandle<()>) {
     let random_string: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(8)
@@ -31,44 +41,57 @@ pub async fn mk_mqtt_client(settings: &Settings) -> Result<MqttClient> {
         .collect();
 
     let mut options = MqttOptions::new(
-        format!("{}-{}", settings.mqtt.id.clone(), random_string),
+        format!("{}-{}", settings.mqtt.id, random_string),
         settings.mqtt.host.clone(),
         settings.mqtt.port,
     );
-    options.set_keep_alive(Duration::from_secs(5));
-    let (client, mut eventloop) = AsyncClient::new(options, 10);
+    options.set_keep_alive(KEEP_ALIVE);
+    let (client, mut eventloop) = AsyncClient::new(options, 64);
 
-    let (tx, rx) = tokio::sync::mpsc::channel(100);
-    let tx = Arc::new(RwLock::new(tx));
-    let rx = Arc::new(RwLock::new(rx));
-    let states = Arc::new(RwLock::new(HashMap::new()));
+    let (tx, rx) = mpsc::channel(100);
 
-    {
-        let settings = settings.clone();
-        let client = client.clone();
+    let mqtt_client = MqttClient {
+        client: client.clone(),
+        light_topic: settings.mqtt.light_topic.clone(),
+        published: Default::default(),
+        last_incoming: Arc::new(Mutex::new(Instant::now())),
+    };
 
-        task::spawn(async move {
-            let mut needs_subscribe = true;
+    let set_topic = settings.mqtt.light_topic_set.replace("{id}", "+");
+    let published = mqtt_client.published.clone();
+    let last_incoming = mqtt_client.last_incoming.clone();
 
-            loop {
-                let notification = match eventloop.poll().await {
-                    Ok(notification) => notification,
-                    Err(e) => {
-                        eprintln!("MQTT error: {:?}", e);
-                        tokio::time::sleep(Duration::from_millis(1000)).await;
-                        continue;
-                    }
-                };
+    // Nothing in this loop may await anything other than eventloop.poll():
+    // the event loop is what drains the client's request channel, so blocking
+    // here on a full channel deadlocks the whole MQTT connection.
+    let handle = tokio::spawn(async move {
+        let mut needs_subscribe = false;
 
-                match notification {
-                    rumqttc::Event::Incoming(rumqttc::Packet::ConnAck(_)) => {
+        loop {
+            let event = match eventloop.poll().await {
+                Ok(event) => event,
+                Err(e) => {
+                    eprintln!("MQTT error: {:?}", e);
+                    time::sleep(Duration::from_secs(1)).await;
+                    continue;
+                }
+            };
+
+            if let Event::Incoming(packet) = event {
+                *last_incoming.lock().unwrap() = Instant::now();
+
+                match packet {
+                    Packet::ConnAck(_) => {
+                        eprintln!("Connected to MQTT broker");
+                        // New session: subscriptions are gone and anything
+                        // queued in the old session has been discarded.
                         needs_subscribe = true;
+                        published.lock().unwrap().clear();
                     }
-                    rumqttc::Event::Incoming(rumqttc::Packet::Publish(msg)) => {
+                    Packet::Publish(msg) => {
                         match serde_json::from_slice::<MqttDevice>(&msg.payload) {
                             Ok(device) => {
-                                let tx = tx.read().await;
-                                if let Err(e) = tx.try_send(Some(device)) {
+                                if let Err(e) = tx.try_send(device) {
                                     eprintln!("Dropping MQTT light command: {}", e);
                                 }
                             }
@@ -77,107 +100,64 @@ pub async fn mk_mqtt_client(settings: &Settings) -> Result<MqttClient> {
                     }
                     _ => {}
                 }
-
-                // Do not await subscribe from inside the event-loop poll. An
-                // awaited request can deadlock when the request channel is
-                // full, preventing the event loop from draining that channel.
-                if needs_subscribe {
-                    match client.try_subscribe(
-                        settings.mqtt.light_topic_set.replace("{id}", "+"),
-                        QoS::AtMostOnce,
-                    ) {
-                        Ok(()) => needs_subscribe = false,
-                        Err(e) => eprintln!("Could not queue MQTT subscription: {}", e),
-                    }
-                }
             }
-        });
-    }
 
-    Ok(MqttClient { client, rx, states })
-}
-
-pub async fn publish_mqtt_device(
-    mqtt_client: &MqttClient,
-    settings: &Settings,
-    mqtt_device: &MqttDevice,
-) -> Result<()> {
-    let topic_template = &settings.mqtt.light_topic;
-
-    let topic = topic_template.replace("{id}", &mqtt_device.id);
-
-    let json = serde_json::to_string(&mqtt_device)?;
-
-    mqtt_client
-        .states
-        .write()
-        .await
-        .insert(mqtt_device.id.clone(), mqtt_device.clone());
-
-    // State is polled continuously and retained, so an occasional dropped
-    // publication is preferable to blocking UDP reception when MQTT is slow
-    // or disconnected.
-    mqtt_client
-        .client
-        .try_publish(topic, rumqttc::QoS::AtMostOnce, true, json)?;
-
-    Ok(())
-}
-
-pub fn start_mqtt_events_loop(
-    mqtt_client: &MqttClient,
-    settings: &Settings,
-    lifx_socket: &LifxSocket,
-) {
-    let mqtt_rx = mqtt_client.rx.clone();
-    let states = mqtt_client.states.clone();
-    let settings = settings.clone();
-    let lifx_socket = lifx_socket.clone();
-
-    tokio::spawn(async move {
-        loop {
-            let result = process_next_mqtt_message(
-                mqtt_rx.clone(),
-                states.clone(),
-                &settings,
-                &lifx_socket.clone(),
-            )
-            .await;
-
-            if let Err(e) = result {
-                eprintln!("{:?}", e);
+            if needs_subscribe {
+                match client.try_subscribe(&set_topic, QoS::AtMostOnce) {
+                    Ok(()) => needs_subscribe = false,
+                    Err(e) => eprintln!("Could not queue MQTT subscription: {}", e),
+                }
             }
         }
     });
+
+    (mqtt_client, rx, handle)
 }
 
-async fn process_next_mqtt_message(
-    mqtt_rx: MqttRx,
-    states: Arc<RwLock<HashMap<String, MqttDevice>>>,
-    settings: &Settings,
-    lifx_socket: &LifxSocket,
-) -> Result<()> {
-    let mqtt_device = {
-        let mut mqtt_rx = mqtt_rx.write().await;
-        let value = mqtt_rx
-            .recv()
-            .await
-            .expect("Expected mqtt_rx channel to never close");
-        value.ok_or_else(|| eyre!("Expected to receive mqtt message from rx channel"))?
-    };
+impl MqttClient {
+    /// Publishes the device state as a retained message, unless it is
+    /// identical to what was last published in this session.
+    pub fn publish_mqtt_device(&self, mqtt_device: &MqttDevice) -> Result<()> {
+        let mut published = self.published.lock().unwrap();
 
-    let device_settings = settings
-        .devices
-        .get(&mqtt_device.id)
-        .ok_or_else(|| eyre!("Device with id {} not found in settings", mqtt_device.id))?;
+        if published.get(&mqtt_device.id) == Some(mqtt_device) {
+            return Ok(());
+        }
 
-    let ip = &device_settings.ip;
-    let addr: SocketAddr = format!("{}:{}", ip, LIFX_UDP_PORT).parse()?;
+        let topic = self.light_topic.replace("{id}", &mqtt_device.id);
+        let json = serde_json::to_string(&mqtt_device)?;
 
-    let current_state = states.read().await.get(&mqtt_device.id).cloned();
-    lifx_socket
-        .send_state_to_lifx(addr, &mqtt_device, current_state.as_ref())
-        .await?;
+        // Never block here: a slow or disconnected broker must not hold up
+        // LIFX traffic. A failed publish is retried on the next poll since
+        // `published` is only updated on success.
+        self.client
+            .try_publish(topic, QoS::AtMostOnce, true, json)?;
 
-    Ok(())
+        published.insert(mqtt_device.id.clone(), mqtt_device.clone());
+
+        Ok(())
+    }
+
+    /// Resolves once the broker has been silent for too long, which means
+    /// that the event loop is stuck or that reconnecting keeps failing.
+    pub fn start_watchdog(&self) -> JoinHandle<()> {
+        let last_incoming = self.last_incoming.clone();
+
+        tokio::spawn(async move {
+            let mut interval = time::interval(Duration::from_secs(5));
+
+            loop {
+                interval.tick().await;
+
+                let silence = last_incoming.lock().unwrap().elapsed();
+                if silence > MAX_SILENCE {
+                    eprintln!(
+                        "Nothing received from MQTT broker in {}s, giving up",
+                        silence.as_secs()
+                    );
+                    return;
+                }
+            }
+        })
+    }
 }
