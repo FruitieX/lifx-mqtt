@@ -166,3 +166,53 @@ impl MqttClient {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mqtt_device::{Capabilities, DeviceColor, Hs};
+
+    #[test]
+    fn client_id_has_random_suffix() {
+        let a = client_id("lifx-mqtt");
+        let b = client_id("lifx-mqtt");
+
+        assert!(a.starts_with("lifx-mqtt-"));
+        assert_eq!(a.len(), "lifx-mqtt-".len() + 8);
+        assert!(a["lifx-mqtt-".len()..]
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric()));
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn device_json_round_trips() {
+        let device = MqttDevice {
+            id: "light-1".into(),
+            name: "Bedroom lamp 1".into(),
+            power: Some(true),
+            brightness: Some(0.5),
+            color: Some(DeviceColor::Hs(Hs { h: 120, s: 0.25 })),
+            transition_ms: Some(500.0),
+            sensor_value: None,
+            capabilities: Some(Capabilities::default()),
+        };
+
+        let json = serde_json::to_string(&device).unwrap();
+        let decoded: MqttDevice = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(decoded, device);
+    }
+
+    #[test]
+    fn decodes_partial_set_command() {
+        let device: MqttDevice = serde_json::from_str(
+            r#"{"id": "light-1", "name": "Lamp", "brightness": 0.8, "color": {"h": 30, "s": 1.0}}"#,
+        )
+        .unwrap();
+
+        assert_eq!(device.power, None);
+        assert_eq!(device.brightness, Some(0.8));
+        assert_eq!(device.color, Some(DeviceColor::Hs(Hs { h: 30, s: 1.0 })));
+    }
+}
