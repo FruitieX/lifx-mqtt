@@ -1,5 +1,5 @@
 use color_eyre::Result;
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distr::Alphanumeric, RngExt};
 use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
 use std::{
     collections::HashMap,
@@ -30,18 +30,23 @@ pub struct MqttClient {
     last_incoming: Arc<Mutex<Instant>>,
 }
 
-/// Connects to the broker and spawns the task driving the MQTT event loop.
-/// Light commands received from the broker are delivered through the
-/// returned channel.
-pub fn mk_mqtt_client(settings: &Settings) -> (MqttClient, Receiver<MqttDevice>, JoinHandle<()>) {
-    let random_string: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
+/// Builds a unique MQTT client id by appending a random suffix to `id`.
+fn client_id(id: &str) -> String {
+    let random_string: String = rand::rng()
+        .sample_iter(Alphanumeric)
         .take(8)
         .map(char::from)
         .collect();
 
+    format!("{id}-{random_string}")
+}
+
+/// Connects to the broker and spawns the task driving the MQTT event loop.
+/// Light commands received from the broker are delivered through the
+/// returned channel.
+pub fn mk_mqtt_client(settings: &Settings) -> (MqttClient, Receiver<MqttDevice>, JoinHandle<()>) {
     let mut options = MqttOptions::new(
-        format!("{}-{}", settings.mqtt.id, random_string),
+        client_id(&settings.mqtt.id),
         settings.mqtt.host.clone(),
         settings.mqtt.port,
     );
