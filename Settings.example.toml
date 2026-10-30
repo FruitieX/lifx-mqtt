@@ -7,6 +7,10 @@ id = "lifx-mqtt"
 host = "test.mosquitto.org"
 port = 1883
 
+# Optional broker credentials; leave out to connect anonymously
+# username = "example"
+# password = "secret"
+
 # MQTT topic where light updates will be published
 light_topic = "home/lights/lifx/{id}"
 

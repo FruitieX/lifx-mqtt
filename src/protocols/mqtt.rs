@@ -51,6 +51,12 @@ pub fn mk_mqtt_client(settings: &Settings) -> (MqttClient, Receiver<MqttDevice>,
         settings.mqtt.port,
     );
     options.set_keep_alive(KEEP_ALIVE);
+    if let Some(username) = &settings.mqtt.username {
+        options.set_credentials(
+            username.clone(),
+            settings.mqtt.password.clone().unwrap_or_default(),
+        );
+    }
     let (client, mut eventloop) = AsyncClient::new(options, 64);
 
     let (tx, rx) = mpsc::channel(100);
